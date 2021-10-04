@@ -13,13 +13,9 @@ classes = ['barbarian', 'crusader', 'monk', 'wizard',
 races = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Gnome', 'Half-Orc']
 
 
-# Connecting Databases and defining cursors
-logindb = sqlite3.connect("login.db")
-lgconn = logindb.cursor()
-chardb = sqlite3.connect("char.db")
-charconn = chardb.cursor()
-invdb = sqlite3.connect("Inv.db")
-invconn = invdb.cursor()
+# Connecting Database and defining cursors
+maindb = sqlite3.connect("main.db")
+mainconn = maindb.cursor()
 
 ################################################
 ###############DATABASES FUNCTION###############
@@ -29,22 +25,22 @@ invconn = invdb.cursor()
 
 
 def logindbcreate():
-    lgconn.execute(
+    mainconn.execute(
         "CREATE TABLE LOGINDB(ID INTEGER PRIMARY KEY AUTOINCREMENT, USERNAME varchar(12) NOT NULL, PASSWORD varchar(25) NOT NULL)")
 
 # Create entry into the Login Database - uses username and password entered by the user
 
 
 def logincreateentry(username, password):
-    lgconn.execute(
+    mainconn.execute(
         "INSERT INTO LOGINDB(USERNAME,PASSWORD) VALUES (?,?)", (username, password))
-    logindb.commit()
+    maindb.commit()
 
 # Creates the character table in the char.db file
 
 
 def chardbcreate():
-    charconn.execute("CREATE TABLE CHARDB(ACCID INTEGER,ID INTEGER PRIMARY KEY AUTOINCREMENT,CHARNAME varchar(12) NOT NULL,RACE varchar(12) NOT NULL,CHARCLASS varchar(12) NOT NULL, LVL INTEGER NOT NULL,GOLD INTEGER,HELMET varchar(12) NOT NULL,CHEST varchar(12) NOT NULL,AMULET varchar(12) NOT NULL,WEAPON varchar(12) NOT NULL,STAGE INTEGER,CURRXP INTEGER,STRENGTH INTEGER,VITALITY INTEGER, SPEED INTEGER,SPOTIONS INTEGER,MPOTIONS INTEGER,LPOTIONS INTEGER)")
+    mainconn.execute("CREATE TABLE CHARDB(ACCID INTEGER,ID INTEGER PRIMARY KEY AUTOINCREMENT,CHARNAME varchar(12) NOT NULL,RACE varchar(12) NOT NULL,CHARCLASS varchar(12) NOT NULL, LVL INTEGER NOT NULL,GOLD INTEGER,HELMET varchar(12) NOT NULL,CHEST varchar(12) NOT NULL,AMULET varchar(12) NOT NULL,WEAPON varchar(12) NOT NULL,STAGE INTEGER,CURRXP INTEGER,STRENGTH INTEGER,VITALITY INTEGER, SPEED INTEGER,SPOTIONS INTEGER,MPOTIONS INTEGER,LPOTIONS INTEGER)")
 
 # Create a record into the Character Databases - uses the information entered in by the user, gives the user 5 small potions to start
 
@@ -52,15 +48,15 @@ def chardbcreate():
 def charactercreateentry(charname, racenum, classnum):
     global classes
     global races
-    charconn.execute("INSERT INTO CHARDB(ACCID,CHARNAME,RACE,CHARCLASS,LVL,GOLD,HELMET,CHEST,AMULET,WEAPON,STAGE,CURRXP,STRENGTH,VITALITY,SPEED,SPOTIONS,MPOTIONS,LPOTIONS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+    mainconn.execute("INSERT INTO CHARDB(ACCID,CHARNAME,RACE,CHARCLASS,LVL,GOLD,HELMET,CHEST,AMULET,WEAPON,STAGE,CURRXP,STRENGTH,VITALITY,SPEED,SPOTIONS,MPOTIONS,LPOTIONS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                      (player.id, charname, races[racenum-1], classes[classnum-1], 1, 0, 'Not Equipped', 'Not Equipped', 'Not Equipped', 'Not Equipped', 1, 0, 0, 0, 0, 5, 0, 0))
-    chardb.commit()
+    maindb.commit()
 
 # Creates the inventory table in the Inv.db file
 
 
 def invdbcreate():
-    invconn.execute("CREATE TABLE INVENTORY(GEARID INTEGER PRIMARY KEY AUTOINCREMENT,OWNER INTEGER,NAME varchar(12),TYPE varchar(12),RARITY varchar(12),EQUIP varchar(1),STAT INTEGER,GOLD INTEGER)")
+    mainconn.execute("CREATE TABLE INVENTORY(GEARID INTEGER PRIMARY KEY AUTOINCREMENT,OWNER INTEGER,NAME varchar(12),TYPE varchar(12),RARITY varchar(12),EQUIP varchar(1),STAT INTEGER,GOLD INTEGER)")
 
 
 # This is a function that tries to execute the functions to create the tables in the database files - If the table is already created, it ignores the error message
@@ -125,19 +121,18 @@ class Player(object):
 
 # Login Function that saves the username and password in a class
 
-
     def login(self):
-        lgconn.execute('SELECT * FROM LOGINDB WHERE ID ="%s"' % (self.id))
-        details = lgconn.fetchone()
+        mainconn.execute('SELECT * FROM LOGINDB WHERE ID ="%s"' % (self.id))
+        details = mainconn.fetchone()
         self.username = details[1]
         self.password = details[2]
 
 # Class function that loads the character details into the class
     def charload(self, charid):
         # Searches the database for the information associated a specific charid
-        charconn.execute(
+        mainconn.execute(
             'SELECT * FROM CHARDB WHERE ACCID ="%s" AND ID = "%s"' % (self.id, charid))
-        details = charconn.fetchone()
+        details = mainconn.fetchone()
         self.charid = details[1]
         self.charname = details[2]
         self.race = details[3]
@@ -172,9 +167,9 @@ class Player(object):
         typelist = ['Helmet', 'Chest', 'Amulet', 'Weapon']
         # This checks the inventory database for any gear items that are equipped
         for type in typelist:
-            invconn.execute("SELECT * FROM INVENTORY WHERE TYPE = '%s' and equip = '%s' AND OWNER ='%s'" %
-                            (type.title(), 'y', player.charid))
-            equipment = invconn.fetchall()
+            mainconn.execute("SELECT * FROM INVENTORY WHERE TYPE = '%s' and equip = '%s' AND OWNER ='%s'" %
+                             (type.title(), 'y', player.charid))
+            equipment = mainconn.fetchall()
             # If equipment is not empty, execute the following code
             if len(equipment) != 0:
                 # This checks if the item is a DMG buff item (increases player's damage output)
@@ -237,9 +232,9 @@ class Player(object):
     # Class function that updates the character's level, current xp and gold value based on the class attributes
     def updatefields(self):
         print(player.gold)
-        charconn.execute('UPDATE CHARDB SET LVL = "%s", CURRXP = "%s", GOLD = "%s",STRENGTH = "%s", VITALITY = "%s", SPEED = "%s" WHERE ID = "%s"' % (
+        mainconn.execute('UPDATE CHARDB SET LVL = "%s", CURRXP = "%s", GOLD = "%s",STRENGTH = "%s", VITALITY = "%s", SPEED = "%s" WHERE ID = "%s"' % (
             self.level, self.currxp, self.gold, self.charid, self.strength, self.vitality, self.speed))
-        chardb.commit()
+        maindb.commit()
 
     # This finds the max possible HP of the player. This is done so that the player can't use potions to get an unrealistic amount of HP
     def findmaxhp(self):
@@ -248,10 +243,10 @@ class Player(object):
         typelist = ['Helmet', 'Chest']
         for type in typelist:
             # for each item in the list it searches for an equipment piece is equipped
-            invconn.execute(
+            mainconn.execute(
                 "SELECT * FROM INVENTORY WHERE TYPE = '%s' and equip = '%s'" % (type.title(), 'y'))
             # Saves the query results as a variable
-            equipment = invconn.fetchall()
+            equipment = mainconn.fetchall()
             # If query returned some results, add to the max variable
             if len(equipment) != 0:
                 max += equipment[0][6]
@@ -385,10 +380,10 @@ def create():
         username = input("Username:  ").lower().strip()
         if len(username) >= 5 and len(username) <= 12:
             # Query that checks if the username is in use
-            lgconn.execute(
+            mainconn.execute(
                 'SELECT * FROM LOGINDB WHERE USERNAME ="%s"' % (username))
             # If the username is free break from the loop. If it isn't ask for another username
-            if lgconn.fetchone() is None:
+            if mainconn.fetchone() is None:
                 break
             else:
                 # tells the uesr that that username is already in use
@@ -479,10 +474,10 @@ def loot(boss):
         gold = random.randint(goldnums[raritylist.index(
             rarity)-1], goldnums[raritylist.index(rarity)])
         # This executes the command that creates an entry into the inventory database
-        invconn.execute("INSERT INTO INVENTORY(OWNER,NAME,TYPE,RARITY,EQUIP,STAT,GOLD) VALUES(?,?,?,?,?,?,?)",
-                        (player.charid, name.title(), type, rarity.title(), 'n', stat, gold))
+        mainconn.execute("INSERT INTO INVENTORY(OWNER,NAME,TYPE,RARITY,EQUIP,STAT,GOLD) VALUES(?,?,?,?,?,?,?)",
+                         (player.charid, name.title(), type, rarity.title(), 'n', stat, gold))
         # This commit line tells the database to make the changes (without this your data will be untouched)
-        invdb.commit()
+        maindb.commit()
         # This prints out what gear the player got
         print("You looted a {} with a stat of {}".format(name, stat))
     else:
@@ -529,19 +524,19 @@ def loot(boss):
 def potionrefresh(type):
     # Updates the amount of small potions in the database for that specific character
     if type == "small":
-        charconn.execute('UPDATE CHARDB SET SPOTIONS = "%s" WHERE ID = "%s"' % (
+        mainconn.execute('UPDATE CHARDB SET SPOTIONS = "%s" WHERE ID = "%s"' % (
             player.spotions, player.charid))
-        chardb.commit()
+        maindb.commit()
     # Updates the amount of medium potions in the database for that specific character
     elif type == "medium":
-        charconn.execute('UPDATE CHARDB SET MPOTIONS = "%s" WHERE ID = "%s"' % (
+        mainconn.execute('UPDATE CHARDB SET MPOTIONS = "%s" WHERE ID = "%s"' % (
             player.mpotions, player.charid))
-        chardb.commit()
+        maindb.commit()
     # Updates the amount of large potions in the database for that specific character
     elif type == "large":
-        charconn.execute('UPDATE CHARDB SET LPOTIONS = "%s" WHERE ID = "%s"' % (
+        mainconn.execute('UPDATE CHARDB SET LPOTIONS = "%s" WHERE ID = "%s"' % (
             player.lpotions, player.charid))
-        chardb.commit()
+        maindb.commit()
 
 # This function decides how attacks in the game sequence
 
@@ -649,17 +644,17 @@ def enter():
                     print("You completed stage {} at the {}, your next journey will take you to the {}".format(
                         player.stage, stagename, stagenames[stagenames.index(complete)+1][0]))
                 player.stage += 1
-                charconn.execute('UPDATE CHARDB SET STAGE = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET STAGE = "%s" WHERE ID = "%s"' % (
                     player.stage, player.charid))
-                chardb.commit()
+                maindb.commit()
                 loot("y")
         else:
             print("You completed stage {}, your next stage is stage {}".format(
                 player.stage, int(player.stage)+1))
             player.stage += 1
-            charconn.execute('UPDATE CHARDB SET STAGE = "%s" WHERE ID = "%s"' % (
+            mainconn.execute('UPDATE CHARDB SET STAGE = "%s" WHERE ID = "%s"' % (
                 player.stage, player.charid))
-            chardb.commit()
+            maindb.commit()
 
     gamemenu()
 
@@ -840,23 +835,23 @@ def bag():
             if choice[0] == "small":
                 hpamount = 30 * amount
                 player.spotions -= amount
-                charconn.execute('UPDATE CHARDB SET SPOTIONS = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET SPOTIONS = "%s" WHERE ID = "%s"' % (
                     player.spotions, player.charid))
-                chardb.commit()
+                maindb.commit()
                 player.usepotion(hpamount)
             elif choice[0] == "medium":
                 hpamount = 40 * amount
                 player.mpotions -= amount
-                charconn.execute('UPDATE CHARDB SET MPOTIONS = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET MPOTIONS = "%s" WHERE ID = "%s"' % (
                     player.mpotions, player.charid))
-                chardb.commit()
+                maindb.commit()
                 player.usepotion(hpamount)
             elif choice[0] == "large":
                 hpamount = 50 * amount
                 player.lpotions -= amount
-                charconn.execute('UPDATE CHARDB SET LPOTIONS = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET LPOTIONS = "%s" WHERE ID = "%s"' % (
                     player.lpotions, player.charid))
-                chardb.commit()
+                maindb.commit()
                 player.usepotion(hpamount)
             print("\nYou are now at {} HP".format(math.ceil(player.hp)))
         else:
@@ -922,14 +917,14 @@ def login():
         elif nonumber == True:
             login()
         else:
-            lgconn.execute(
+            mainconn.execute(
                 'SELECT * FROM LOGINDB WHERE USERNAME ="%s" AND PASSWORD = "%s" ' % (username, password))
-            if lgconn.fetchone() is not None:
+            if mainconn.fetchone() is not None:
                 print("You are logged in!\n\nWelcome to Assault of Power")
                 player.loggedin = 1
-                lgconn.execute(
+                mainconn.execute(
                     'SELECT * FROM LOGINDB WHERE USERNAME ="%s" AND PASSWORD = "%s" ' % (username, password))
-                player.id = lgconn.fetchone()[0]
+                player.id = mainconn.fetchone()[0]
                 player.login()
                 switcher()
                 break
@@ -940,8 +935,8 @@ def login():
 
 
 def switcher():
-    charconn.execute('SELECT * FROM CHARDB WHERE ACCID = "%s" ' % (player.id))
-    data = charconn.fetchall()
+    mainconn.execute('SELECT * FROM CHARDB WHERE ACCID = "%s" ' % (player.id))
+    data = mainconn.fetchall()
     if len(data) == 0:
         begin()
     else:
@@ -989,19 +984,19 @@ def skills():
                     print("That is an incorrect input!\n")
             if skill == 'strength':
                 player.strength += amount
-                charconn.execute('UPDATE CHARDB SET STRENGTH = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET STRENGTH = "%s" WHERE ID = "%s"' % (
                     player.strength, player.charid))
-                chardb.commit()
+                maindb.commit()
             elif skill == 'vitality':
                 player.vitality += amount
-                charconn.execute('UPDATE CHARDB SET VITALITY = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET VITALITY = "%s" WHERE ID = "%s"' % (
                     player.vitality, player.charid))
-                chardb.commit()
+                maindb.commit()
             elif skill == 'speed':
                 player.speed += amount
-                charconn.execute('UPDATE CHARDB SET SPEED = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET SPEED = "%s" WHERE ID = "%s"' % (
                     player.speed, player.charid))
-                chardb.commit()
+                maindb.commit()
             print("You have now added {} points to {}".format(
                 amount, skill.title()))
         else:
@@ -1043,9 +1038,9 @@ def inventory():
     empty = 0
     i = 1
     for piece in pieces:
-        invconn.execute(
+        mainconn.execute(
             "SELECT * FROM INVENTORY WHERE OWNER = '%s' AND TYPE = '%s'" % (player.charid, piece))
-        data = invconn.fetchall()
+        data = mainconn.fetchall()
         if len(data) != 0:
             print(str(i)+")", piece.title())
             templist.append(piece)
@@ -1067,9 +1062,9 @@ def inventory():
     if empty == 0:
         piece = templist[choice-1]
         print("---", piece.title(), "---")
-        invconn.execute(
+        mainconn.execute(
             "SELECT * FROM INVENTORY WHERE OWNER = '%s' AND TYPE = '%s'" % (player.charid, piece))
-        details = invconn.fetchall()
+        details = mainconn.fetchall()
         templist = []
         max1 = 2
         max2 = 4
@@ -1100,9 +1095,9 @@ def inventory():
                 max1 = len(str(id))
         print("\n|ID{}|NAME{}|RARITY{}|TYPE{}|STAT{}|GOLD{}|EQUIP{}|".format(spacer(
             max1-2), spacer(max2-4), spacer(max3-6), spacer(max4-4), spacer(max5-4), spacer(max6-4), spacer(max7-5),))
-        invconn.execute(
+        mainconn.execute(
             "SELECT * FROM INVENTORY WHERE OWNER = '%s' AND TYPE = '%s'" % (player.charid, piece))
-        details = invconn.fetchall()
+        details = mainconn.fetchall()
         for item in details:
             if item[5] == "y":
                 equip = "Yes"
@@ -1134,56 +1129,56 @@ def inventory():
                 print("That is not a correct input!\n")
         if choice == 1:
             print(piece)
-            invconn.execute('UPDATE INVENTORY SET EQUIP = "%s" WHERE OWNER = "%s" AND EQUIP = "%s" AND TYPE = "%s"' % (
+            mainconn.execute('UPDATE INVENTORY SET EQUIP = "%s" WHERE OWNER = "%s" AND EQUIP = "%s" AND TYPE = "%s"' % (
                 'n', player.charid, "y", piece))
-            invdb.commit()
-            invconn.execute(
+            maindb.commit()
+            mainconn.execute(
                 'UPDATE INVENTORY SET EQUIP = "%s" WHERE GEARID = "%s"' % ('y', chosenid))
-            invdb.commit()
+            maindb.commit()
             details = []
             piecelist = ['Helmet', 'Chest', 'Amulet', 'Weapon']
             if piece == 'Helmet':
-                invconn.execute('SELECT NAME FROM INVENTORY WHERE OWNER = "%s" AND TYPE = "%s" AND EQUIP = "%s"' % (
+                mainconn.execute('SELECT NAME FROM INVENTORY WHERE OWNER = "%s" AND TYPE = "%s" AND EQUIP = "%s"' % (
                     player.charid, "Helmet", "y"))
-                details = invconn.fetchone()
+                details = mainconn.fetchone()
                 player.helmet = details[0]
-                charconn.execute('UPDATE CHARDB SET HELMET = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET HELMET = "%s" WHERE ID = "%s"' % (
                     player.helmet, player.charid))
-                chardb.commit()
+                maindb.commit()
             elif piece == 'Chest':
-                invconn.execute('SELECT NAME FROM INVENTORY WHERE OWNER = "%s" AND TYPE = "%s" AND EQUIP = "%s"' % (
+                mainconn.execute('SELECT NAME FROM INVENTORY WHERE OWNER = "%s" AND TYPE = "%s" AND EQUIP = "%s"' % (
                     player.charid, "Chest", "y"))
-                details = invconn.fetchone()
+                details = mainconn.fetchone()
                 player.chest = details[0]
-                charconn.execute('UPDATE CHARDB SET CHEST = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET CHEST = "%s" WHERE ID = "%s"' % (
                     player.chest, player.charid))
-                chardb.commit()
+                maindb.commit()
             elif piece == 'Amulet':
-                invconn.execute('SELECT NAME FROM INVENTORY WHERE OWNER = "%s" AND TYPE = "%s" AND EQUIP = "%s"' % (
+                mainconn.execute('SELECT NAME FROM INVENTORY WHERE OWNER = "%s" AND TYPE = "%s" AND EQUIP = "%s"' % (
                     player.charid, "Amulet", "y"))
-                details = invconn.fetchone()
+                details = mainconn.fetchone()
                 player.amulet = details[0]
-                charconn.execute('UPDATE CHARDB SET AMULET = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET AMULET = "%s" WHERE ID = "%s"' % (
                     player.amulet, player.charid))
-                chardb.commit()
+                maindb.commit()
             elif piece == 'Weapon':
-                invconn.execute('SELECT NAME FROM INVENTORY WHERE OWNER = "%s" AND TYPE = "%s" AND EQUIP = "%s"' % (
+                mainconn.execute('SELECT NAME FROM INVENTORY WHERE OWNER = "%s" AND TYPE = "%s" AND EQUIP = "%s"' % (
                     player.charid, "Weapon", "y"))
-                details = invconn.fetchone()
+                details = mainconn.fetchone()
                 player.weapon = details[0]
-                charconn.execute('UPDATE CHARDB SET WEAPON = "%s" WHERE ID = "%s"' % (
+                mainconn.execute('UPDATE CHARDB SET WEAPON = "%s" WHERE ID = "%s"' % (
                     player.weapon, player.charid))
-                chardb.commit()
+                maindb.commit()
             print("\nThat is now equipped!\n")
         elif choice == 2:
-            invconn.execute(
+            mainconn.execute(
                 'SELECT * FROM INVENTORY WHERE GEARID ="%s"' % (chosenid))
-            details = invconn.fetchone()
+            details = mainconn.fetchone()
             player.gold += int(details[7])
             player.updatefields()
-            invconn.execute(
+            mainconn.execute(
                 'DELETE FROM INVENTORY WHERE GEARID = "%s"' % (chosenid))
-            invdb.commit()
+            maindb.commit()
             print("\nYou sold that piece for {} gold!".format(int(details[7])))
 
     gamemenu()
@@ -1227,8 +1222,8 @@ def gamemenu():
 def charpick():
     empty = 0
     print("\nPlease select a character")
-    charconn.execute('SELECT * FROM CHARDB WHERE ACCID = "%s"' % (player.id))
-    details = charconn.fetchall()
+    mainconn.execute('SELECT * FROM CHARDB WHERE ACCID = "%s"' % (player.id))
+    details = mainconn.fetchall()
     templist = []
     i = 1
     if len(details) == 0:
@@ -1305,7 +1300,7 @@ def charmenu():
 def begin():
     global races
     global classes
-    welcomestart = lgconn.execute(
+    welcomestart = mainconn.execute(
         'SELECT * FROM LOGINDB WHERE ID ="%s"' % (player.id))
     print("Welcome", welcomestart.fetchone()[
           1]+",", "please create a game character!.\nType exit to leave")
