@@ -21,10 +21,10 @@ In this game, you are able to receive gear drops as you play, increasing your ch
 
 ## Character Stats
 The levelling system in my program is quite simple. When the player levels up they gain a skill point which they can allocate to either strength (Damage), vitality (Health points) or speed (Who attacks first). The amount of XP rewarded for killing an enemy is increased based on the stage the user is on. The amount of XP required to level up increases based on the player level. To calculate xp requirements for the current player level I used the formula:
-$$ XP = 50 * 1.2^Level $$    
+$$XP = 50 * 1.2^Level$$    
 
 ## Stage and Difficulty Progression
-The difficulty scaling in my game is quite simple. The enemy HP and damage output are increased with every stage. The enemy’s attack is $$ 13 + 0.7*stage $$ and the enemy’s HP is $$ 68 + 1 * stage $$ This increases the game difficulty as the user advances the stages.
+The difficulty scaling in my game is quite simple. The enemy HP and damage output are increased with every stage. The enemy’s attack is $$13 + 0.7*stage$$ and the enemy’s HP is $$68 + 1 * stage$$ This increases the game difficulty as the user advances the stages.
 
 ## Setup
 To install this game, simply clone the repo to your computer and run the python file. To manage the .db files, this project uses sqlite3 which is a part of the python standard library, so no need to install anything extra. Upon the first time running the .py file, a main.db file will be created, containing all of the sql tables required to play the game.
